@@ -5,19 +5,40 @@ var etat = [[], [], []];
 
 var NB_MIN = 1;
 var NB_MAX = 8;
+var NB_DEFAUT = 3;
 
 var champNb = document.getElementById("nb-anneaux");
 var btnDemarrer = document.getElementById("btn-demarrer");
+var zoneMessage = document.getElementById("message");
 var tours = document.querySelectorAll("#plateau .tour");
 
-// Lit le champ, le corrige si besoin (entier entre 1 et 8) et renvoie la valeur.
+function afficherMessage(texte) {
+  zoneMessage.textContent = texte;
+}
+
+// Lit le champ, le corrige si besoin (entier entre 1 et 8),
+// signale la correction à l'utilisateur et renvoie la valeur retenue.
 function lireNombreAnneaux() {
-  var n = parseInt(champNb.value, 10);
-  if (isNaN(n)) {
-    n = 3;
+  var brut = champNb.value.trim();
+  var n = Number(brut);
+  var message = "";
+
+  if (brut === "" || isNaN(n)) {
+    n = NB_DEFAUT;
+    message = "Valeur manquante ou invalide : " + n + " anneaux ont été utilisés.";
+  } else if (n < NB_MIN) {
+    n = NB_MIN;
+    message = "Le minimum est " + NB_MIN + " anneau : la valeur a été corrigée.";
+  } else if (n > NB_MAX) {
+    n = NB_MAX;
+    message = "Le maximum est " + NB_MAX + " anneaux : la valeur a été corrigée.";
+  } else if (!Number.isInteger(n)) {
+    n = Math.floor(n);
+    message = "Le nombre d’anneaux doit être entier : " + n + " a été utilisé.";
   }
-  n = Math.max(NB_MIN, Math.min(NB_MAX, n));
+
   champNb.value = n;
+  afficherMessage(message); // chaîne vide si la valeur était valide
   return n;
 }
 
