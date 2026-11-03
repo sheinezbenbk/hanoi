@@ -14,6 +14,18 @@ var NB_MIN = 1;
 var NB_MAX = 8;
 var NB_DEFAUT = 3;
 
+// Une couleur distincte par taille d'anneau (indice = taille - 1).
+var COULEURS = [
+  "#e6194b", // 1 rouge
+  "#f58231", // 2 orange
+  "#f5c400", // 3 jaune
+  "#3cb44b", // 4 vert
+  "#2bb3c0", // 5 turquoise
+  "#4363d8", // 6 bleu
+  "#911eb4", // 7 violet
+  "#e052b0"  // 8 rose
+];
+
 var champNb = document.getElementById("nb-anneaux");
 var btnDemarrer = document.getElementById("btn-demarrer");
 var zoneMessage = document.getElementById("message");
@@ -83,6 +95,7 @@ function rendre() {
   for (var i = 0; i < tours.length; i++) {
     var tour = tours[i];
     tour.textContent = ""; // vide la tour : aucun doublon possible
+    tour.classList.toggle("origine", selection === i); // purement visuel
 
     for (var j = 0; j < etat[i].length; j++) {
       var taille = etat[i][j];
@@ -94,7 +107,7 @@ function rendre() {
         anneau.className += " selectionne";
       }
       anneau.style.width = (20 + taille * 10) + "%";
-      anneau.style.backgroundColor = "hsl(" + (taille * 40) + ", 65%, 55%)";
+      anneau.style.backgroundColor = COULEURS[taille - 1];
 
       // Le gestionnaire connaît (i, j) par fermeture : on ne relit pas le DOM.
       anneau.addEventListener("click", creerGestionnaireAnneau(i, j));
