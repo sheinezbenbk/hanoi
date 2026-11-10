@@ -39,3 +39,15 @@ J'ai gardé le style A.
 ![résultat style A](image/A.png)
 
 ![résultat style B](image/B.png)
+
+## Exercice 5
+
+**A**
+" pour la suite, ajoute à mon jeu un bouton "démo autmatique" qui resout le jeu sous les yeux de l'utilisaeur grace à un algorithme récursif mais pour ça je souhaite que tu réalise deux fonctions distinctes : resoudre(n, de, vers, via) qui renvoie la liste des coups (des couples [de, vers]) sans rien afficher, et une fonction qui rejoue cette liste coup par coup avec un délai (setTimeout, ou async/await avec une fonction d’attente). " 
+
+Oui, le LLM (Claude) connaît l'algorithme car il déplace les n-1 anneaux du dessus vers la tour intermédiaire, puis le plus grand vers la tour d'arrivée, puis les n-1 par dessus, et il est correct, ce quise vérifie dans la console `resoudre(3,0,2,1).length qui vaut 7 (et 31 pour 5 anneaux)
+
+**B** Parce que ce sont deux problèmes différents, et les mélanger rendrait le code plus difficle à tester, à corriger et à faire évoluer. Lorsque le'utilisateur clique sur "Démarrer" pendant la démo, la démo s'arrête immédiatement et le jeu repart d'une partie neuve, jouable par l'utilisateur. 
+
+Le LLM (Claude) a traité ce cas en ajoutant une fonction `annulerDemo` dans le gestionnaire `demarrer()`, qui incrémente un compteur idDemo et remet demoEnCours à false, de sorte que la démo en cours, qui compare son propre numéro à idDemo après chaque attente, constate qu’il est périmé et s’arrête sans plus rien modifier, pendant que demarrer() réinitialise l’état et redessine un plateau neuf avec tous les anneaux sur la première tour.
+
