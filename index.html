@@ -1,23 +1,30 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tours de Hanoï</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-  <h1>Tours de Hanoï</h1>
+  <div class="entete">
+    <h1>Tours de Hanoï</h1>
+    <button id="btn-theme" class="secondaire" type="button">Mode sombre</button>
+  </div>
 
   <div class="commandes">
     <label for="nb-anneaux">Nombre d’anneaux :</label>
     <input type="number" id="nb-anneaux" min="1" max="8" value="3">
     <button id="btn-demarrer" type="button">Démarrer</button>
-    <button id="btn-demo" type="button">Démo automatique</button>
-
+    <button id="btn-demo" class="secondaire" type="button">Démo automatique</button>
+    <button id="btn-reset" class="secondaire" type="button">Reset</button>
   </div>
+
+  <p id="infos">
+    Coups : <strong id="compteur">0</strong> ·
+    Minimum : <strong id="minimum">—</strong> ·
+    Score : <strong id="score">—</strong>
+  </p>
 
   <p id="message" role="status" aria-live="polite"></p>
 
@@ -29,5 +36,4 @@
 
   <script src="script.js"></script>
 </body>
-
 </html>

@@ -51,3 +51,11 @@ Oui, le LLM (Claude) connaît l'algorithme car il déplace les n-1 anneaux du de
 
 Le LLM (Claude) a traité ce cas en ajoutant une fonction `annulerDemo` dans le gestionnaire `demarrer()`, qui incrémente un compteur idDemo et remet demoEnCours à false, de sorte que la démo en cours, qui compare son propre numéro à idDemo après chaque attente, constate qu’il est périmé et s’arrête sans plus rien modifier, pendant que demarrer() réinitialise l’état et redessine un plateau neuf avec tous les anneaux sur la première tour.
 
+## Exercice 6 
+
+**A** Calaude a choisi `element.animate()` avec `transform` parce que `rendre()` recrée les anneaux à chaque coup, ce qui rend les transistions CSS inutilisables, et l'alternative aurait été des `@kayframes` CSS pilotés par des variables, plus dispersés et moins pratiques pour attendre la fin du mouvement. 
+
+**B** L’animation a demandé le plus de reformulations, parce qu’elle entrait en conflit avec la règle d’architecture, `rendre()` recrée les anneaux à chaque coup, donc les transitions CSS ne marchent pas.
+
+Ce qui manquait au premier prompt : il ne précisait pas que l’animation devait s’appliquer à des anneaux recréés par `rendre()`, que l’état devait être mis à jour avant l’animation, ni quelle technique utiliser.
+

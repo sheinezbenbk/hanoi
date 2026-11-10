@@ -1,49 +1,44 @@
-// ÉTAT DU JEU : trois piles (tableaux). Le bas de la pile est à l'indice 0.
-// Une taille vaut 1 (plus petit anneau) à nb (plus grand anneau).
-// Le DOM n'est jamais la source de vérité : tout l'affichage vient de cet état.
+// ÉTAT DU JEU : trois piles (le bas est à l'indice 0), valeurs = tailles d'anneaux.
+// Le DOM n'est jamais la source de vérité : rendre() reconstruit tout depuis ces variables.
 var etat = [[], [], []];
-
-// Sélection en cours : indice de la tour d'origine, ou null si rien n'est sélectionné.
-var selection = null;
-
-// Vaut true seulement après un clic sur « Démarrer » (ou « Démo automatique »).
+var selection = null;        // tour d'origine de l'anneau sélectionné, ou null
+var nbAnneaux = 0;           // nombre d'anneaux de la partie (0 = aucune partie)
+var nbCoups = 0;             // compteur de coups (manuel et démo)
 var partieEnCours = false;
-
-// Démo automatique : true pendant qu'elle tourne.
-// idDemo sert à annuler une démo en cours : chaque démo mémorise son numéro
-// et s'arrête dès que le numéro courant a changé.
+var partieTerminee = false;
 var demoEnCours = false;
-var idDemo = 0;
+var animationEnCours = false;
+var idDemo = 0;              // change à chaque nouvelle partie : annule démo et animations en retard
 
 var NB_MIN = 1;
 var NB_MAX = 8;
 var NB_DEFAUT = 3;
-var DELAI_DEMO = 300; // millisecondes entre deux étapes de la démo
+var DUREE_MANUEL = 450;      // durée de l'animation d'un coup du joueur (ms)
+var DUREE_DEMO = 300;        // durée de l'animation d'un coup de la démo (ms)
+var DELAI_DEMO = 100;        // pause entre deux coups de la démo (ms)
 
-// Une couleur distincte par taille d'anneau (indice = taille - 1).
-var COULEURS = [
-  "#e6194b", // 1 rouge
-  "#f58231", // 2 orange
-  "#f5c400", // 3 jaune
-  "#3cb44b", // 4 vert
-  "#2bb3c0", // 5 turquoise
-  "#4363d8", // 6 bleu
-  "#911eb4", // 7 violet
-  "#e052b0"  // 8 rose
-];
+var COULEURS = ["#e6194b", "#f58231", "#f5c400", "#3cb44b",
+                "#2bb3c0", "#4363d8", "#911eb4", "#e052b0"];
+
+var theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "sombre" : "clair";
+var reduireMouvement = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 var champNb = document.getElementById("nb-anneaux");
 var btnDemarrer = document.getElementById("btn-demarrer");
 var btnDemo = document.getElementById("btn-demo");
+var btnReset = document.getElementById("btn-reset");
+var btnTheme = document.getElementById("btn-theme");
 var zoneMessage = document.getElementById("message");
+var zoneCompteur = document.getElementById("compteur");
+var zoneMinimum = document.getElementById("minimum");
+var zoneScore = document.getElementById("score");
 var tours = document.querySelectorAll("#plateau .tour");
 
-function afficherMessage(texte) {
+function afficherMessage(texte, succes) {
   zoneMessage.textContent = texte;
+  zoneMessage.className = succes ? "succes" : "";
 }
 
-// Lit le champ, le corrige si besoin (entier entre 1 et 8),
-// signale la correction à l'utilisateur et renvoie la valeur retenue.
 function lireNombreAnneaux() {
   var brut = champNb.value.trim();
   var n = Number(brut);
@@ -68,109 +63,168 @@ function lireNombreAnneaux() {
   return n;
 }
 
-// Réinitialise l'état : tous les anneaux sur la première tour,
-// du plus grand (en bas) au plus petit (en haut).
 function initialiserEtat(nb) {
   etat = [[], [], []];
   for (var taille = nb; taille >= 1; taille--) {
     etat[0].push(taille);
   }
   selection = null;
+  nbAnneaux = nb;
+  nbCoups = 0;
+  partieTerminee = false;
 }
 
-// RÈGLE DU JEU : fonction pure, elle lit seulement `etat` et ne touche pas au DOM.
-// Renvoie true si l'anneau du sommet de la tour `de` peut aller sur la tour `vers`.
+// RÈGLES : fonctions qui ne touchent pas au DOM.
 function deplacementValide(de, vers) {
-  if (de === vers) {
-    return false;
-  }
+  if (de === vers) { return false; }
   var pileDe = etat[de];
   var pileVers = etat[vers];
-  if (pileDe.length === 0) {
-    return false; // rien à déplacer
-  }
-  if (pileVers.length === 0) {
-    return true; // tour vide : toujours accepté
-  }
-  var anneauDeplace = pileDe[pileDe.length - 1];
-  var sommetDestination = pileVers[pileVers.length - 1];
-  return anneauDeplace < sommetDestination; // jamais un grand sur un petit
+  if (pileDe.length === 0) { return false; }
+  if (pileVers.length === 0) { return true; }
+  return pileDe[pileDe.length - 1] < pileVers[pileVers.length - 1];
 }
 
-// SOLVEUR RÉCURSIF : renvoie la liste des coups [de, vers] qui déplacent
-// n anneaux de la tour `de` vers la tour `vers`, en passant par `via`.
-// Il ne lit ni ne modifie `etat`, et n'affiche rien : il ne calcule que des coups.
+// Victoire : tous les anneaux sont sur la troisième tour.
+function estVictoire() {
+  return nbAnneaux > 0 && etat[2].length === nbAnneaux;
+}
+
+function calculerMinimum(n) {
+  return Math.pow(2, n) - 1;
+}
+
+// Score en % : minimum de coups / coups joués (100 % = parfait).
+function calculerScore(n, coups) {
+  if (coups === 0) { return 0; }
+  return Math.round(100 * calculerMinimum(n) / coups);
+}
+
+// SOLVEUR : renvoie la liste des coups [de, vers], sans rien afficher.
 function resoudre(n, de, vers, via) {
-  if (n === 0) {
-    return [];
-  }
-  var avant = resoudre(n - 1, de, via, vers);   // dégager les n-1 anneaux du dessus
-  var milieu = [[de, vers]];                    // déplacer le plus grand
-  var apres = resoudre(n - 1, via, vers, de);   // remettre les n-1 anneaux dessus
-  return avant.concat(milieu, apres);
+  if (n === 0) { return []; }
+  var avant = resoudre(n - 1, de, via, vers);
+  var apres = resoudre(n - 1, via, vers, de);
+  return avant.concat([[de, vers]], apres);
 }
 
-// Fonction d'attente pour async/await : se résout après `ms` millisecondes.
 function attente(ms) {
-  return new Promise(function (resolve) {
-    setTimeout(resolve, ms);
-  });
+  return new Promise(function (resolve) { setTimeout(resolve, ms); });
 }
 
-// Reconstruit entièrement l'affichage à partir de l'état (et de la sélection).
+function afficherInfos() {
+  zoneCompteur.textContent = nbCoups;
+  zoneMinimum.textContent = nbAnneaux > 0 ? calculerMinimum(nbAnneaux) : "—";
+  zoneScore.textContent = partieTerminee ? calculerScore(nbAnneaux, nbCoups) + " %" : "—";
+}
+
+// Reconstruit entièrement l'affichage à partir de l'état.
 function rendre() {
   for (var i = 0; i < tours.length; i++) {
     var tour = tours[i];
-    tour.textContent = ""; // vide la tour : aucun doublon possible
-    tour.classList.toggle("origine", selection === i); // purement visuel
+    tour.textContent = "";
+    tour.classList.toggle("origine", selection === i);
 
     for (var j = 0; j < etat[i].length; j++) {
       var taille = etat[i][j];
-      var estSommet = (j === etat[i].length - 1);
-
       var anneau = document.createElement("div");
       anneau.className = "anneau";
-      if (selection === i && estSommet) {
+      if (selection === i && j === etat[i].length - 1) {
         anneau.className += " selectionne";
       }
       anneau.style.width = (20 + taille * 10) + "%";
       anneau.style.backgroundColor = COULEURS[taille - 1];
-
-      // Le gestionnaire connaît (i, j) par fermeture : on ne relit pas le DOM.
       anneau.addEventListener("click", creerGestionnaireAnneau(i, j));
       tour.appendChild(anneau);
     }
   }
+  afficherInfos();
 }
 
-// Retour visuel temporaire sur une tour (dépôt refusé).
 function signalerRefus(indexTour) {
   var tour = tours[indexTour];
   tour.classList.remove("refus");
-  void tour.offsetWidth; // permet de rejouer l'animation
+  void tour.offsetWidth;
   tour.classList.add("refus");
-  setTimeout(function () {
-    tour.classList.remove("refus");
-  }, 400);
+  setTimeout(function () { tour.classList.remove("refus"); }, 400);
 }
 
-// Gère un clic sur la tour i. j est l'indice de l'anneau cliqué dans la pile,
-// ou -1 si le clic est sur la tour elle-même (hors anneau).
-function gererClic(i, j) {
-  // Pendant la démo, le joueur ne touche pas au plateau
+// ANIMATION (purement visuelle) : l'état est déjà à jour et rendre() a déjà redessiné.
+// On fait partir le nouvel anneau de son ancienne position : il se soulève,
+// glisse au-dessus des tours, puis redescend sur sa nouvelle pile.
+function animerAnneau(anneau, avant, duree) {
+  if (reduireMouvement.matches || !anneau.animate) {
+    return Promise.resolve();
+  }
+  var apres = anneau.getBoundingClientRect();
+  var dx = avant.left - apres.left;
+  var dy = avant.top - apres.top;
+  var haut = Math.min(dy, tours[0].getBoundingClientRect().top - 30 - apres.top);
+
+  anneau.style.zIndex = 10;
+  var animation = anneau.animate([
+    { transform: "translate(" + dx + "px," + dy + "px)", offset: 0, easing: "ease-out" },
+    { transform: "translate(" + dx + "px," + haut + "px)", offset: 0.3, easing: "ease-in-out" },
+    { transform: "translate(0px," + haut + "px)", offset: 0.7, easing: "ease-in" },
+    { transform: "translate(0px,0px)", offset: 1 }
+  ], { duration: duree });
+
+  return animation.finished.then(
+    function () { anneau.style.zIndex = ""; },
+    function () {}
+  );
+}
+
+// Un coup (manuel ou démo) : état, compteur, affichage, animation, puis victoire.
+async function jouerCoup(de, vers, duree) {
+  var id = idDemo;
+  var avant = tours[de].lastElementChild.getBoundingClientRect();
+
+  selection = null;
+  etat[vers].push(etat[de].pop());
+  nbCoups++;
+  rendre();
+
+  animationEnCours = true;
+  await animerAnneau(tours[vers].lastElementChild, avant, duree);
+  if (id !== idDemo) { return; } // une nouvelle partie a commencé entre-temps
+  animationEnCours = false;
+
+  if (estVictoire()) {
+    terminerPartie();
+  }
+}
+
+function terminerPartie() {
+  partieTerminee = true;
+  var minimum = calculerMinimum(nbAnneaux);
+  var score = calculerScore(nbAnneaux, nbCoups);
+
   if (demoEnCours) {
-    afficherMessage("Démo en cours : clique sur « Démarrer » pour l’interrompre.");
+    afficherMessage("La démo a résolu le jeu en " + nbCoups + " coups, le minimum possible.", true);
+  } else if (nbCoups === minimum) {
+    afficherMessage("Bravo, parfait ! Tu as réussi en " + nbCoups + " coups, le minimum possible. Score : 100 %.", true);
+  } else {
+    afficherMessage("Bravo ! Tu as réussi en " + nbCoups + " coups (minimum : " + minimum + "). Score : " + score + " %.", true);
+  }
+  rendre();
+}
+
+function gererClic(i, j) {
+  if (demoEnCours) {
+    afficherMessage("Démo en cours : clique sur « Démarrer » ou « Reset » pour l’interrompre.");
     return;
   }
-
-  // Aucune partie lancée : on explique quoi faire au lieu de dire « tour vide »
+  if (animationEnCours) { return; }
   if (!partieEnCours) {
     afficherMessage("Clique d’abord sur « Démarrer » pour commencer une partie.");
     return;
   }
+  if (partieTerminee) {
+    afficherMessage("Partie terminée : clique sur « Démarrer » pour rejouer.", true);
+    return;
+  }
 
   if (selection === null) {
-    // Phase 1 : choisir un anneau à déplacer
     if (etat[i].length === 0) {
       afficherMessage("Cette tour est vide : rien à sélectionner.");
       return;
@@ -185,21 +239,17 @@ function gererClic(i, j) {
     return;
   }
 
-  // Phase 2 : choisir la destination
   if (i === selection) {
-    selection = null; // clic sur la tour d'origine : annulation
+    selection = null;
     afficherMessage("");
     rendre();
     return;
   }
 
   if (deplacementValide(selection, i)) {
-    etat[i].push(etat[selection].pop());
-    selection = null;
     afficherMessage("");
-    rendre();
+    jouerCoup(selection, i, DUREE_MANUEL);
   } else {
-    // Refusé : l'état ne change pas, la sélection est conservée
     afficherMessage("Déplacement interdit : on ne pose pas un grand anneau sur un plus petit.");
     signalerRefus(i);
   }
@@ -207,89 +257,92 @@ function gererClic(i, j) {
 
 function creerGestionnaireAnneau(i, j) {
   return function (evenement) {
-    evenement.stopPropagation(); // évite le doublon avec le clic sur la tour
+    evenement.stopPropagation();
     gererClic(i, j);
   };
 }
 
-// Interrompt une démo éventuelle (elle s'arrête au prochain contrôle d'id).
+// Arrête démo et animations en cours (elles se retirent au prochain contrôle d'id).
 function annulerDemo() {
   idDemo++;
   demoEnCours = false;
+  animationEnCours = false;
   btnDemo.disabled = false;
 }
 
-// REJEU : joue la liste de coups, un par un, avec un délai.
-// Pour chaque coup : on sélectionne l'anneau, on attend, puis on le dépose.
-// Les coups passent par etat et rendre(), comme ceux du joueur.
-async function rejouer(coups, id) {
-  await attente(DELAI_DEMO * 2); // laisse voir la position de départ
-  if (id !== idDemo) { return; }
-
-  for (var k = 0; k < coups.length; k++) {
-    var de = coups[k][0];
-    var vers = coups[k][1];
-
-    // Sécurité : la liste doit respecter la règle du jeu
+async function rejouer(liste, id) {
+  await attente(DELAI_DEMO * 3);
+  for (var n = 0; n < liste.length; n++) {
+    if (id !== idDemo) { return; }
+    var de = liste[n][0];
+    var vers = liste[n][1];
     if (!deplacementValide(de, vers)) {
       afficherMessage("Erreur : coup impossible dans la démo.");
       break;
     }
-
-    afficherMessage("Coup " + (k + 1) + " sur " + coups.length);
-    selection = de;
-    rendre();
-    await attente(DELAI_DEMO);
-    if (id !== idDemo) { return; } // démo annulée pendant l'attente
-
-    etat[vers].push(etat[de].pop());
-    selection = null;
-    rendre();
-    await attente(DELAI_DEMO);
+    afficherMessage("Démo : coup " + (n + 1) + " sur " + liste.length);
+    await jouerCoup(de, vers, DUREE_DEMO);
     if (id !== idDemo) { return; }
+    await attente(DELAI_DEMO);
   }
-
   if (id === idDemo) {
     demoEnCours = false;
     btnDemo.disabled = false;
-    if (k === coups.length) {
-      afficherMessage("Démo terminée en " + coups.length + " coups.");
-    }
   }
 }
 
 function demarrer() {
-  annulerDemo(); // « Démarrer » interrompt toujours une démo
+  annulerDemo();
   initialiserEtat(lireNombreAnneaux());
   partieEnCours = true;
   rendre();
 }
 
-// Démo : repart d'un plateau neuf avec le nombre d'anneaux du champ,
-// calcule les coups (sans rien afficher), puis les rejoue.
 function lancerDemo() {
   annulerDemo();
   var nb = lireNombreAnneaux();
   initialiserEtat(nb);
   partieEnCours = true;
   rendre();
-
-  var coups = resoudre(nb, 0, 2, 1); // de la tour 0 vers la tour 2, via la tour 1
   demoEnCours = true;
   btnDemo.disabled = true;
-  rejouer(coups, idDemo);
+  rejouer(resoudre(nb, 0, 2, 1), idDemo);
+}
+
+// Reset : retour complet à l'écran de départ (plateau vide, compteur à 0, champ à 3).
+function reinitialiser() {
+  annulerDemo();
+  etat = [[], [], []];
+  selection = null;
+  nbAnneaux = 0;
+  nbCoups = 0;
+  partieEnCours = false;
+  partieTerminee = false;
+  champNb.value = NB_DEFAUT;
+  afficherMessage("");
+  rendre();
+}
+
+function appliquerTheme() {
+  document.documentElement.dataset.theme = theme;
+  btnTheme.textContent = theme === "sombre" ? "Mode clair" : "Mode sombre";
+}
+
+function basculerTheme() {
+  theme = (theme === "sombre") ? "clair" : "sombre";
+  appliquerTheme();
 }
 
 btnDemarrer.addEventListener("click", demarrer);
 btnDemo.addEventListener("click", lancerDemo);
+btnReset.addEventListener("click", reinitialiser);
+btnTheme.addEventListener("click", basculerTheme);
 
 for (var k = 0; k < tours.length; k++) {
   tours[k].addEventListener("click", (function (index) {
-    return function () {
-      gererClic(index, -1);
-    };
+    return function () { gererClic(index, -1); };
   })(k));
 }
 
-// Affichage initial (plateau vide tant qu'on n'a pas cliqué)
+appliquerTheme();
 rendre();
