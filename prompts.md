@@ -33,4 +33,9 @@ Pour traiter le cas non prévu (clic sur une tour quand aucune partie n'est lanc
 
 Pour l'en empêcher, il faut ajouter au prompt la contrainte suivante : « Ne modifie que style.css (et index.html si nécessaire), ne touche à aucune ligne de script.js et ne le renvoie pas »
 
-**B/** 
+**B/** J'ai demandé qu'il me donne deux propositions de fichiers CSS complets pour modifier le fichier initial avecdes styles diférents. Il a protogé le jeu, c'est à dire qu'il n'a pas modifié `index.html` ni le `script.js`. Ensuite il a forcé unevraie différente entre le style A et  eEn imposant deux directions précises (sobre et chaleureux contre sombre et contrasté). 
+J'ai gardé le style A. 
+
+![résultat style A](image/A.png)
+
+![résultat style B](image/B.png)
