@@ -108,4 +108,27 @@ Construis le jeu des Tours de Hanoï en HTML, CSS et JavaScript purs, en trois f
 - Après les fichiers, ajoute au maximum 10 lignes : les choix techniques importants (en particulier la technique d'animation retenue et pourquoi) et les limites éventuelles.
 - Si une exigence te paraît ambiguë ou impossible à respecter avec ces contraintes, dis-le après les fichiers plutôt que de la contourner en silence.
 
-**A** 
+| Critère | ChatGPT | Gemini |
+|---|---|---|
+| Fonctionnalités correctes du premier coup (sur 6) | à compléter après tes tests | à compléter après tes tests |
+| Nombre de reformulations nécessaires | à compléter | à compléter |
+| Taille du code (lignes) | 649 (script.js), 440 (style.css), 80 (index.html) | 256 (script.js), 209 (style.css), 43 (index.html) |
+| Noms et signatures imposés | tous respectés | respectés, sauf `deplacementValide` qui a un 3e paramètre |
+| État séparé de l'affichage (`rendre()`) | oui | oui |
+| `resoudre` correcte (7 coups pour 3 anneaux) | oui | non : la liste est tronquée (3 coups) |
+| `resoudre` séparée de l'animation | oui | oui |
+| Démo automatique | probablement fonctionnelle (à tester) | ne joue rien : l'identifiant de démo est incrémenté deux fois |
+| Clics ignorés pendant la démo | oui | non : possibles entre deux coups |
+| État mis à jour avant l'animation | oui | non : mis à jour après |
+| Technique d'animation | `element.animate()` sur un anneau temporaire | `setTimeout` imbriqués et `transform` en ligne |
+| Score affiché séparément | oui | non : seulement dans le message de victoire |
+| Mode sombre conservé après Reset | oui | oui |
+| Lisibilité | très commenté, découpé en sections | court, peu de commentaires |
+
+**A** Une fois l'architecture imposé retiré, au niveau visuel rien n'a chngé mais pour ChatGPT le code adopte une approche impérative orientée DOM, tout en conservant un état centralisé en JavaScript. Pour Gemini, le code passe d'un état centralisé en mémoire à une manipulation directe des éléments du DOM.
+
+**B** Le code obtenu en un seul prompt est comparable à celui des six exercices avec ChatGPT et moins bon avec Gemini.
+Sur trois critères : 
+- Ce qu'on attend de lui sur le `resoudre` et de la démo (7 coups pour 3 anneaux),
+- Le respect de l’architecture imposée (la mémoire du jeu d’un côté, l’affichage de l’autre, et la mémoire modifiée avant d’animer),
+- Les LLM ont bien programmé tout ce que j'avais demandé dans la liste
