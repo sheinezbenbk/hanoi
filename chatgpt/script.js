@@ -1,24 +1,43 @@
 
 "use strict";
 
-/* =========================================
-   CONSTANTES ET ÉLÉMENTS HTML
-========================================= */
+/* =====================================
+   RÉCUPÉRATION DES ÉLÉMENTS
+===================================== */
 
 const plateau = document.getElementById("plateau");
 const champAnneaux = document.getElementById("nb-anneaux");
+
+const tours = document.querySelectorAll(".tour");
 
 const btnDemarrer = document.getElementById("btn-demarrer");
 const btnDemo = document.getElementById("btn-demo");
 const btnReset = document.getElementById("btn-reset");
 const btnTheme = document.getElementById("btn-theme");
 
-const affichageCompteur = document.getElementById("compteur");
-const affichageMinimum = document.getElementById("minimum");
-const affichageScore = document.getElementById("score");
-const affichageMessage = document.getElementById("message");
+const compteur = document.getElementById("compteur");
+const minimum = document.getElementById("minimum");
+const score = document.getElementById("score");
+const message = document.getElementById("message");
 
-const COULEURS = [
+/* =====================================
+   VARIABLES DU JEU
+===================================== */
+
+let nombreAnneaux = 0;
+let coups = 0;
+let anneauSelectionne = null;
+
+let partieEnCours = false;
+let partieTerminee = false;
+let demoEnCours = false;
+let animationEnCours = false;
+
+let identifiantDemo = 0;
+let themeSombre = false;
+
+// Les couleurs sont attribuées par taille.
+const couleurs = [
     "#e74c3c",
     "#e67e22",
     "#f1c40f",
@@ -29,239 +48,158 @@ const COULEURS = [
     "#e84393"
 ];
 
-const REDUCED_MOTION = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-);
+// Stockage simple des anneaux dans chaque tour.
+// L'indice 0 correspond au bas de la pile.
+let etatTours = [[], [], []];
 
-/* =========================================
-   ÉTAT DU JEU
-========================================= */
-
-// Les anneaux sont numérotés du plus petit (1)
-// au plus grand (n).
-// L'indice 0 correspond toujours au bas de la pile.
-
-let tours = [[], [], []];
-
-let selection = null;
-let coups = 0;
-let partieEnCours = false;
-let partieTerminee = false;
-let nombreAnneaux = 0;
-
-let minimumCoups = 0;
-
-// Identifiant permettant d'annuler les anciennes démos.
-let identifiantDemo = 0;
-
-// Empêche les clics pendant une animation.
-let animationEnCours = false;
-
-// Thème indépendant du reset.
-let themeSombre = false;
-
-/* =========================================
+/* =====================================
    OUTILS
-========================================= */
+===================================== */
+
+function afficherMessage(texte) {
+    message.textContent = texte;
+}
+
+function calculerMinimum() {
+    return Math.pow(2, nombreAnneaux) - 1;
+}
 
 function attendre(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function afficherMessage(texte) {
-    affichageMessage.textContent = texte;
-}
+/* =====================================
+   CRÉATION DES ANNEAUX
+===================================== */
 
-function calculerMinimum(n) {
-    return Math.pow(2, n) - 1;
-}
+function creerAnneaux(n) {
+    nombreAnneaux = n;
+    etatTours = [[], [], []];
 
-/* =========================================
-   CRÉATION DE LA PARTIE
-========================================= */
-
-function creerPartie(n) {
-    tours = [[], [], []];
-
-    // Les grands anneaux sont placés en premier.
+    // Les plus grands anneaux sont placés en premier.
     for (let i = n; i >= 1; i--) {
-        tours[0].push(i);
+        etatTours[0].push(i);
     }
 
-    nombreAnneaux = n;
     coups = 0;
-    selection = null;
-    partieTerminee = false;
+    anneauSelectionne = null;
+
     partieEnCours = true;
+    partieTerminee = false;
 
-    minimumCoups = calculerMinimum(n);
+    compteur.textContent = "0";
+    minimum.textContent = calculerMinimum();
+    score.textContent = "—";
 
-    rendre();
+    afficherAnneaux();
 }
 
-/* =========================================
-   RENDU DU DOM
-========================================= */
+/* =====================================
+   AFFICHAGE DES ANNEAUX
+===================================== */
 
-// Le DOM est entièrement reconstruit depuis l'état.
-// Il ne sert jamais à déterminer la validité d'un coup.
+function afficherAnneaux() {
+    tours.forEach((tour, index) => {
+        tour.innerHTML = "";
 
-function rendre() {
-    const elementsTours = plateau.querySelectorAll(".tour");
-
-    elementsTours.forEach((elementTour, indexTour) => {
-        elementTour.replaceChildren();
-
-        tours[indexTour].forEach((taille, indexAnneau) => {
+        etatTours[index].forEach((taille, position) => {
             const anneau = document.createElement("div");
 
-            anneau.className = "anneau";
+            anneau.classList.add("anneau");
 
-            // Largeur proportionnelle à la taille de l'anneau.
-            const largeur = 25 + (taille / nombreAnneaux) * 75;
+            // Largeur calculée selon la taille de l'anneau.
+            anneau.style.width =
+                (25 + (taille / nombreAnneaux) * 75) + "%";
 
-            anneau.style.width = largeur + "%";
-            anneau.style.backgroundColor = COULEURS[taille - 1];
+            anneau.style.backgroundColor = couleurs[taille - 1];
 
-            anneau.dataset.taille = taille;
-
-            // Seul l'anneau situé au sommet peut être sélectionné.
-            const estSommet =
-                indexAnneau === tours[indexTour].length - 1;
-
+            // Seul le sommet de la tour est sélectionnable.
             if (
-                selection &&
-                selection.tour === indexTour &&
-                estSommet
+                anneauSelectionne &&
+                anneauSelectionne.tour === index &&
+                position === etatTours[index].length - 1
             ) {
                 anneau.classList.add("selectionne");
             }
 
-            elementTour.appendChild(anneau);
+            tour.appendChild(anneau);
         });
     });
 
-    affichageCompteur.textContent = coups;
-    affichageMinimum.textContent = minimumCoups;
+    compteur.textContent = coups;
 }
 
-/* =========================================
-   VALIDATION DES DÉPLACEMENTS
-========================================= */
+/* =====================================
+   RÈGLE DU JEU
+===================================== */
 
-// Cette fonction ne touche jamais au DOM ni à l'état.
-
-function deplacementValide(de, vers) {
-    if (de === vers) return false;
-
-    const tourSource = tours[de];
-    const tourDestination = tours[vers];
-
-    if (tourSource.length === 0) return false;
-
-    const anneauSource = tourSource[tourSource.length - 1];
-
-    if (tourDestination.length === 0) return true;
-
-    const anneauDestination =
-        tourDestination[tourDestination.length - 1];
-
-    return anneauSource < anneauDestination;
-}
-
-/* =========================================
-   CALCUL RÉCURSIF DE LA SOLUTION
-========================================= */
-
-// Cette fonction calcule uniquement la liste des coups.
-// Elle ne modifie jamais l'état du jeu.
-
-function resoudre(n, de, vers, via) {
-    if (n === 0) {
-        return [];
+function deplacementAutorise(de, vers) {
+    if (de === vers || etatTours[de].length === 0) {
+        return false;
     }
 
-    const coupsSolution = [];
+    const tailleDepart =
+        etatTours[de][etatTours[de].length - 1];
 
-    // Déplacer n-1 anneaux vers la tour intermédiaire.
-    coupsSolution.push(
-        ...resoudre(n - 1, de, via, vers)
-    );
+    if (etatTours[vers].length === 0) {
+        return true;
+    }
 
-    // Déplacer le plus grand anneau.
-    coupsSolution.push([de, vers]);
+    const tailleArrivee =
+        etatTours[vers][etatTours[vers].length - 1];
 
-    // Déplacer n-1 anneaux vers la destination.
-    coupsSolution.push(
-        ...resoudre(n - 1, via, vers, de)
-    );
-
-    return coupsSolution;
+    return tailleDepart < tailleArrivee;
 }
 
-/* =========================================
-   ANIMATION VISUELLE
-========================================= */
+/* =====================================
+   ANIMATION DES DÉPLACEMENTS
+===================================== */
 
-// L'état est déjà mis à jour lorsque cette fonction est appelée.
-// L'animation utilise un élément temporaire indépendant du DOM du jeu.
-
-async function animerDeplacement(
-    tourDepart,
-    tourArrivee,
-    taille,
-    numeroDemo
-) {
-    if (REDUCED_MOTION.matches) {
+async function animerAnneau(de, vers, taille) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         return;
     }
 
-    const elementDepart = plateau.querySelectorAll(".tour")[tourDepart];
-    const elementArrivee = plateau.querySelectorAll(".tour")[tourArrivee];
+    const elementDepart = tours[de];
+    const elementArrivee = tours[vers];
 
-    const ancienAnneau = document.createElement("div");
+    const rectangleDepart = elementDepart.getBoundingClientRect();
+    const rectangleArrivee = elementArrivee.getBoundingClientRect();
 
-    ancienAnneau.className = "anneau anneau-animation";
+    const clone = document.createElement("div");
 
-    const largeur = 25 + (taille / nombreAnneaux) * 75;
+    clone.className = "anneau anneau-animation";
 
-    ancienAnneau.style.width =
-        (largeur / 100 * elementDepart.clientWidth) + "px";
+    const largeur =
+        (25 + (taille / nombreAnneaux) * 75) *
+        rectangleDepart.width / 100;
 
-    ancienAnneau.style.height = "25px";
-    ancienAnneau.style.backgroundColor = COULEURS[taille - 1];
+    clone.style.width = largeur + "px";
+    clone.style.height = "25px";
+    clone.style.backgroundColor = couleurs[taille - 1];
 
-    const positionDepart = elementDepart.getBoundingClientRect();
-    const positionArrivee = elementArrivee.getBoundingClientRect();
+    const xDepart =
+        rectangleDepart.left +
+        (rectangleDepart.width - largeur) / 2;
 
-    // Le clone part de l'ancienne position de l'anneau.
-    const xDepart = positionDepart.left +
-        (positionDepart.width - ancienAnneau.offsetWidth) / 2;
+    const xArrivee =
+        rectangleArrivee.left +
+        (rectangleArrivee.width - largeur) / 2;
 
-    const yDepart = positionDepart.top + 100;
+    const yDepart = rectangleDepart.top + 100;
+    const yArrivee = rectangleArrivee.top + 100;
 
-    const xArrivee = positionArrivee.left +
-        (positionArrivee.width - ancienAnneau.offsetWidth) / 2;
+    clone.style.left = xDepart + "px";
+    clone.style.top = yDepart + "px";
 
-    const yArrivee = positionArrivee.top + 100;
-
-    ancienAnneau.style.left = xDepart + "px";
-    ancienAnneau.style.top = yDepart + "px";
-
-    document.body.appendChild(ancienAnneau);
+    document.body.appendChild(clone);
 
     const distanceX = xArrivee - xDepart;
+    const hauteur = Math.max(70, Math.abs(distanceX) * 0.2);
 
-    const hauteur = Math.max(
-        70,
-        Math.abs(distanceX) * 0.2
-    );
-
-    const animation = ancienAnneau.animate(
+    const animation = clone.animate(
         [
-            {
-                transform: "translate(0, 0)"
-            },
+            { transform: "translate(0, 0)" },
             {
                 transform: `translate(0, -${hauteur}px)`,
                 offset: 0.25
@@ -284,151 +222,119 @@ async function animerDeplacement(
     try {
         await animation.finished;
     } catch (erreur) {
-        // Une animation annulée ne doit pas interrompre le jeu.
+        // L'animation peut être interrompue par un Reset.
     }
 
-    ancienAnneau.remove();
+    clone.remove();
 }
 
-/* =========================================
-   EXÉCUTION D'UN COUP
-========================================= */
+/* =====================================
+   EFFECTUER UN DÉPLACEMENT
+===================================== */
 
-// Cette fonction est commune au joueur et à la démo.
-
-async function effectuerCoup(de, vers, numeroDemo = null) {
-    if (!deplacementValide(de, vers)) {
+async function deplacerAnneau(de, vers) {
+    if (!deplacementAutorise(de, vers)) {
         return false;
     }
 
-    const taille = tours[de][tours[de].length - 1];
+    const taille =
+        etatTours[de][etatTours[de].length - 1];
 
-    // Mise à jour de l'état avant l'animation.
-    tours[de].pop();
-    tours[vers].push(taille);
+    // Modifier immédiatement l'état du jeu.
+    etatTours[de].pop();
+    etatTours[vers].push(taille);
 
     coups++;
+    anneauSelectionne = null;
 
-    selection = null;
+    afficherAnneaux();
 
-    rendre();
-
-    await animerDeplacement(
-        de,
-        vers,
-        taille,
-        numeroDemo
-    );
+    // L'animation est uniquement visuelle.
+    await animerAnneau(de, vers, taille);
 
     return true;
 }
 
-/* =========================================
-   DÉTECTION DE LA VICTOIRE
-========================================= */
+/* =====================================
+   GESTION DE LA SÉLECTION
+===================================== */
 
-function verifierVictoire() {
-    if (partieTerminee) return;
-
-    if (tours[2].length !== nombreAnneaux) {
-        return;
-    }
-
-    partieTerminee = true;
-    partieEnCours = false;
-    selection = null;
-
-    const score = Math.round(
-        (minimumCoups / coups) * 100
-    );
-
-    affichageScore.textContent = score + " %";
-
-    rendre();
-
-    afficherMessage(
-        `🎉 Félicitations ! Vous avez terminé en ${coups} coups. ` +
-        `Score : ${score} %. Minimum théorique : ${minimumCoups} coups.`
-    );
-}
-
-/* =========================================
-   SÉLECTION ET DÉPLACEMENT MANUELS
-========================================= */
-
-function gererClicTour(indexTour) {
+async function cliquerTour(index) {
     if (!partieEnCours) {
         afficherMessage(
-            "Cliquez sur « Démarrer » pour commencer une nouvelle partie."
+            "Cliquez sur Démarrer pour commencer la partie."
         );
         return;
     }
 
-    if (animationEnCours || partieTerminee) {
+    if (demoEnCours || animationEnCours || partieTerminee) {
         return;
     }
 
-    // Aucune sélection : sélectionner le sommet.
-    if (selection === null) {
-        if (tours[indexTour].length === 0) {
+    // Première sélection.
+    if (anneauSelectionne === null) {
+        if (etatTours[index].length === 0) {
             afficherMessage("Cette tour est vide.");
             return;
         }
 
-        selection = {
-            tour: indexTour,
-            taille: tours[indexTour][tours[indexTour].length - 1]
+        const taille =
+            etatTours[index][etatTours[index].length - 1];
+
+        anneauSelectionne = {
+            tour: index,
+            taille: taille
         };
 
-        rendre();
+        afficherAnneaux();
 
-        afficherMessage("Anneau sélectionné. Choisissez une tour de destination.");
+        afficherMessage(
+            "Anneau sélectionné. Choisissez une tour de destination."
+        );
+
         return;
     }
 
-    const tourOrigine = selection.tour;
+    const origine = anneauSelectionne.tour;
 
     // Cliquer sur la tour d'origine annule la sélection.
-    if (indexTour === tourOrigine) {
-        selection = null;
-        rendre();
+    if (origine === index) {
+        anneauSelectionne = null;
+        afficherAnneaux();
 
         afficherMessage("Sélection annulée.");
         return;
     }
 
-    // Vérification de la règle.
-    if (!deplacementValide(tourOrigine, indexTour)) {
-        selectionnerRefus(indexTour);
+    // Refuser un déplacement interdit.
+    if (!deplacementAutorise(origine, index)) {
+        afficherRefus(index);
         return;
     }
 
-    // Exécuter le déplacement.
     animationEnCours = true;
 
-    effectuerCoup(tourOrigine, indexTour)
-        .then(() => {
-            verifierVictoire();
+    await deplacerAnneau(origine, index);
 
-            if (!partieTerminee) {
-                afficherMessage("Déplacement effectué. À vous de jouer !");
-            }
-        })
-        .finally(() => {
-            animationEnCours = false;
-        });
+    animationEnCours = false;
+
+    verifierVictoire();
+
+    if (!partieTerminee) {
+        afficherMessage("Déplacement effectué. Continuez !");
+    }
 }
 
-/* =========================================
-   REFUS VISUEL
-========================================= */
+/* =====================================
+   ANIMATION DE REFUS
+===================================== */
 
-function selectionnerRefus(indexTour) {
-    const tour = plateau.querySelectorAll(".tour")[indexTour];
+function afficherRefus(index) {
+    const tour = tours[index];
 
     tour.classList.remove("refus");
 
-    // Force le redémarrage de l'animation.
+    // Relancer l'animation CSS.
     void tour.offsetWidth;
 
     tour.classList.add("refus");
@@ -444,13 +350,41 @@ function selectionnerRefus(indexTour) {
     );
 }
 
-/* =========================================
-   GESTION DE LA VALEUR DU CHAMP
-========================================= */
+/* =====================================
+   VICTOIRE ET SCORE
+===================================== */
 
-function lireNombreAnneaux() {
+function verifierVictoire() {
+    if (partieTerminee) return;
+
+    if (etatTours[2].length !== nombreAnneaux) {
+        return;
+    }
+
+    partieTerminee = true;
+    partieEnCours = false;
+
+    anneauSelectionne = null;
+
+    const scoreFinal = Math.round(
+        (calculerMinimum() / coups) * 100
+    );
+
+    score.textContent = scoreFinal + " %";
+
+    afficherAnneaux();
+
+    afficherMessage(
+        `🎉 Félicitations ! Partie terminée en ${coups} coups. Score : ${scoreFinal} %.`
+    );
+}
+
+/* =====================================
+   CORRECTION DU NOMBRE D'ANNEAUX
+===================================== */
+
+function obtenirNombreAnneaux() {
     const valeur = champAnneaux.value.trim();
-
     const nombre = Number(valeur);
 
     if (
@@ -459,7 +393,6 @@ function lireNombreAnneaux() {
         nombre < 1 ||
         nombre > 8
     ) {
-        // Une valeur invalide est ramenée dans les bornes.
         let correction = 3;
 
         if (valeur !== "" && Number.isFinite(nombre)) {
@@ -472,7 +405,7 @@ function lireNombreAnneaux() {
         champAnneaux.value = correction;
 
         afficherMessage(
-            `Valeur incorrecte : le nombre d'anneaux doit être un entier entre 1 et 8. Valeur corrigée à ${correction}.`
+            `Valeur incorrecte : entre 1 et 8 anneaux sont autorisés. Correction : ${correction}.`
         );
 
         return correction;
@@ -481,130 +414,150 @@ function lireNombreAnneaux() {
     return nombre;
 }
 
-/* =========================================
-   ARRÊT PROPRE D'UNE PARTIE OU DÉMO
-========================================= */
+/* =====================================
+   CALCUL DE LA SOLUTION
+===================================== */
 
-function interrompreDemo() {
-    identifiantDemo++;
+function resoudre(n, de, vers, via) {
+    if (n === 0) {
+        return [];
+    }
 
-    // Annulation de toutes les animations visuelles en cours.
-    document.querySelectorAll(".anneau-animation").forEach(
-        element => element.remove()
-    );
-
-    animationEnCours = false;
+    return [
+        ...resoudre(n - 1, de, via, vers),
+        [de, vers],
+        ...resoudre(n - 1, via, vers, de)
+    ];
 }
 
-/* =========================================
-   BOUTON DÉMARRER
-========================================= */
-
-btnDemarrer.addEventListener("click", () => {
-    interrompreDemo();
-
-    const n = lireNombreAnneaux();
-
-    creerPartie(n);
-
-    affichageScore.textContent = "—";
-
-    afficherMessage(
-        `Nouvelle partie : ${n} anneau(x). Déplacez-les vers la troisième tour.`
-    );
-});
-
-/* =========================================
-   DÉMO AUTOMATIQUE
-========================================= */
+/* =====================================
+   DÉMONSTRATION AUTOMATIQUE
+===================================== */
 
 async function lancerDemo() {
+    // Annuler une ancienne démonstration.
     interrompreDemo();
 
-    const numeroDemo = identifiantDemo;
+    const id = identifiantDemo;
 
-    const n = lireNombreAnneaux();
+    const n = obtenirNombreAnneaux();
 
-    creerPartie(n);
+    creerAnneaux(n);
+
+    demoEnCours = true;
 
     afficherMessage("🤖 Démonstration automatique en cours...");
-
-    animationEnCours = true;
 
     const solution = resoudre(n, 0, 2, 1);
 
     for (const [de, vers] of solution) {
-        // Une nouvelle partie ou un reset invalide cette démo.
-        if (numeroDemo !== identifiantDemo) {
+        // Vérifier que cette démo est toujours active.
+        if (id !== identifiantDemo) {
             return;
         }
 
-        if (deplacementValide(de, vers)) {
-            await effectuerCoup(de, vers, numeroDemo);
-        }
+        await deplacerAnneau(de, vers);
 
-        if (numeroDemo !== identifiantDemo) {
+        if (id !== identifiantDemo) {
             return;
         }
 
-        await attendre(REDUCED_MOTION.matches ? 100 : 180);
+        await attendre(
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? 100
+                : 180
+        );
     }
 
-    if (numeroDemo !== identifiantDemo) {
+    if (id !== identifiantDemo) {
         return;
     }
 
-    animationEnCours = false;
+    demoEnCours = false;
 
     verifierVictoire();
 }
 
-btnDemo.addEventListener("click", lancerDemo);
+/* =====================================
+   INTERRUPTION DE LA DÉMONSTRATION
+===================================== */
 
-/* =========================================
-   BOUTON RESET
-========================================= */
+function interrompreDemo() {
+    identifiantDemo++;
 
-function resetJeu() {
+    demoEnCours = false;
+    animationEnCours = false;
+
+    // Supprimer les clones encore visibles.
+    document.querySelectorAll(".anneau-animation").forEach(
+        clone => clone.remove()
+    );
+}
+
+/* =====================================
+   DÉMARRER UNE NOUVELLE PARTIE
+===================================== */
+
+btnDemarrer.addEventListener("click", () => {
     interrompreDemo();
 
-    tours = [[], [], []];
+    const n = obtenirNombreAnneaux();
 
-    selection = null;
-    coups = 0;
+    creerAnneaux(n);
+
+    afficherMessage(
+        `Nouvelle partie : ${n} anneau(x). À vous de jouer !`
+    );
+});
+
+/* =====================================
+   LANCER LA DÉMO
+===================================== */
+
+btnDemo.addEventListener("click", lancerDemo);
+
+/* =====================================
+   RESET
+===================================== */
+
+btnReset.addEventListener("click", () => {
+    interrompreDemo();
+
+    etatTours = [[], [], []];
+
     nombreAnneaux = 0;
-    minimumCoups = 0;
+    coups = 0;
+
+    anneauSelectionne = null;
 
     partieEnCours = false;
     partieTerminee = false;
 
-    affichageCompteur.textContent = "0";
-    affichageMinimum.textContent = "0";
-    affichageScore.textContent = "—";
+    compteur.textContent = "0";
+    minimum.textContent = "0";
+    score.textContent = "—";
 
-    // Reconstruire le plateau vide.
-    plateau.querySelectorAll(".tour").forEach(tour => {
-        tour.replaceChildren();
+    tours.forEach(tour => {
+        tour.innerHTML = "";
         tour.classList.remove("refus");
     });
 
     afficherMessage(
-        "Jeu réinitialisé. Cliquez sur « Démarrer » pour recommencer."
+        "Jeu réinitialisé. Cliquez sur Démarrer pour recommencer."
     );
+});
 
-    // Le thème n'est volontairement pas modifié.
-}
-
-btnReset.addEventListener("click", resetJeu);
-
-/* =========================================
+/* =====================================
    MODE SOMBRE / CLAIR
-========================================= */
+===================================== */
 
 btnTheme.addEventListener("click", () => {
     themeSombre = !themeSombre;
 
-    document.body.classList.toggle("theme-sombre", themeSombre);
+    document.body.classList.toggle(
+        "theme-sombre",
+        themeSombre
+    );
 
     btnTheme.textContent = themeSombre
         ? "☀️ Mode clair"
@@ -618,32 +571,28 @@ btnTheme.addEventListener("click", () => {
     );
 });
 
-/* =========================================
-   INITIALISATION DES ÉVÉNEMENTS
-========================================= */
+/* =====================================
+   ÉVÉNEMENTS DES TOURS
+===================================== */
 
-// Les trois tours sont identifiées par leur indice.
-// Les clics passent exclusivement par la logique JavaScript.
-
-plateau.querySelectorAll(".tour").forEach((tour, index) => {
+tours.forEach((tour, index) => {
     tour.addEventListener("click", () => {
-        gererClicTour(index);
+        cliquerTour(index);
     });
 });
 
-/* =========================================
+/* =====================================
    INITIALISATION
-========================================= */
+===================================== */
 
-// Vérification des fonctions récursives.
 console.assert(
     resoudre(3, 0, 2, 1).length === 7,
-    "La solution de 3 anneaux doit comporter 7 coups."
+    "Erreur dans la solution à 3 anneaux."
 );
 
 console.assert(
     resoudre(5, 0, 2, 1).length === 31,
-    "La solution de 5 anneaux doit comporter 31 coups."
+    "Erreur dans la solution à 5 anneaux."
 );
 
-rendre();
+afficherAnneaux();

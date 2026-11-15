@@ -108,3 +108,4 @@ Construis le jeu des Tours de Hanoï en HTML, CSS et JavaScript purs, en trois f
 - Après les fichiers, ajoute au maximum 10 lignes : les choix techniques importants (en particulier la technique d'animation retenue et pourquoi) et les limites éventuelles.
 - Si une exigence te paraît ambiguë ou impossible à respecter avec ces contraintes, dis-le après les fichiers plutôt que de la contourner en silence.
 
+**A** 

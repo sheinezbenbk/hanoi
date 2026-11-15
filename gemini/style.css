@@ -158,7 +158,6 @@ input[type="number"] {
     position: relative;
     z-index: 2;
     margin-bottom: 2px;
-    transition: transform 0.3s ease;
 }
 
 .anneau.selectionne {
@@ -199,12 +198,5 @@ input[type="number"] {
     }
     #plateau {
         height: 200px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .anneau, .tour.refus {
-        animation: none !important;
-        transition: none !important;
     }
 }
