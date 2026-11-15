@@ -59,3 +59,10 @@ Le LLM (Claude) a traité ce cas en ajoutant une fonction `annulerDemo` dans le 
 
 Ce qui manquait au premier prompt : il ne précisait pas que l’animation devait s’appliquer à des anneaux recréés par `rendre()`, que l’état devait être mis à jour avant l’animation, ni quelle technique utiliser.
 
+**C** En Javascript le LLM écrit `Math.pow(2, n) - 1`.
+
+![](image/image.png)
+
+## Exercice 7 
+
+Le prompt envoyé aux deux LLM différents : 
