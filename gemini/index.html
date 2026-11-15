@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="clair">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tours de Hanoï</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Tours de Hanoï</h1>
+        <button id="btn-theme" type="button">Mode sombre</button>
+    </header>
+
+    <main>
+        <section id="controles">
+            <div class="groupe-champ">
+                <label for="nb-anneaux">Nombre d'anneaux (1-8) :</label>
+                <input type="number" id="nb-anneaux" value="3" min="1" max="8">
+            </div>
+            <div class="groupe-boutons">
+                <button id="btn-demarrer" type="button">Démarrer</button>
+                <button id="btn-demo" type="button">Démo automatique</button>
+                <button id="btn-reset" type="button">Reset</button>
+            </div>
+        </section>
+
+        <div id="message-erreur" class="cache" aria-live="polite"></div>
+
+        <div id="plateau">
+            <div class="tour" data-index="0"></div>
+            <div class="tour" data-index="1"></div>
+            <div class="tour" data-index="2"></div>
+        </div>
+
+        <section id="infos-jeu">
+            <p>Coups : <span id="compteur-coups">0</span></p>
+            <div id="message-victoire" class="cache" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

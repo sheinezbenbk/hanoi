@@ -66,3 +66,45 @@ Ce qui manquait au premier prompt : il ne précisait pas que l’animation devai
 ## Exercice 7 
 
 Le prompt envoyé aux deux LLM différents : 
+
+Tu es un développeur web front-end expérimenté. Tu écris du code lisible, commenté en français, et tu respectes à la lettre les noms et les contraintes qu'on te donne. 
+
+Construis le jeu des Tours de Hanoï en HTML, CSS et JavaScript purs, en trois fichiers ouverts directement dans le navigateur (double-clic sur index.html, sans serveur). L'interface est entièrement en français. Le joueur déplace des anneaux entre trois tours, à la souris, avec la règle : on ne pose jamais un grand anneau sur un plus petit.
+
+1. **Page minimale** : une zone `#plateau` contenant trois éléments de classe `tour` ; un champ numérique `#nb-anneaux` (min 1, max 8, valeur 3) ; un bouton `#btn-demarrer` libellé « Démarrer ».
+2. **Création des anneaux** : au clic sur « Démarrer », les anneaux sont créés sur la première tour, empilés, en nombre égal à la valeur du champ, de largeurs décroissantes du bas vers le haut. Un second clic remet le jeu à zéro sans dupliquer les anneaux. Une valeur hors bornes (0, 12, vide, décimale) est corrigée, et un message en français l'explique.
+3. **Jeu à la souris** : un clic sélectionne l'anneau du sommet d'une tour (seul le sommet est sélectionnable, il est mis en évidence) ; un second clic sur une tour l'y dépose si la règle le permet. Un dépôt interdit est refusé avec un retour visuel (tour rouge qui tremble) et sans modifier l'état. Une tour vide accepte tout anneau. Un clic sur la tour d'origine annule la sélection. Tant que « Démarrer » n'a pas été cliqué, un clic sur une tour affiche un message invitant à démarrer.
+4. **Apparence** : chaque anneau a une couleur distincte ; la sélection est clairement visible ; la page reste lisible sur une fenêtre étroite (moins de 520 px).
+5. **Démo automatique** : un bouton `#btn-demo` « Démo automatique » repart d'une partie neuve et résout le jeu sous les yeux du joueur. Les clics sur les tours sont ignorés pendant la démo. Un clic sur « Démarrer » ou « Reset » l'interrompt proprement.
+6. **Compléments, dans cet ordre** :
+   1. un compteur de coups, incrémenté en mode manuel comme en démo ;
+   2. la détection de la victoire (tous les anneaux sur la troisième tour, détectée une seule fois) et un message de félicitations ;
+   3. un score fondé sur le nombre minimal de coups 2ⁿ − 1 (rapport minimum / coups joués, en pourcentage), affiché en fin de partie ;
+   4. un bouton « Reset » qui remet compteur, score, sélection et affichage à zéro, y compris pendant une démo ;
+   5. des animations avancées : l'anneau se soulève, glisse au-dessus des tours puis redescend, au lieu de réapparaître ;
+   6. un mode sombre / clair avec un bouton pour basculer, appliqué à toute la page et conservé après un « Reset ».
+
+- HTML, CSS et JavaScript purs : aucune bibliothèque, aucun framework, pas de modules ES.
+- Trois fichiers séparés : `index.html`, `style.css`, `script.js`. Aucun CSS ni JavaScript dans le HTML (ni `<style>`, ni `style=""` écrit à la main, ni `onclick`).
+- Identifiants et classes imposés (à reprendre exactement) : `#plateau`, `.tour`, `#nb-anneaux`, `#btn-demarrer`, `#btn-demo`, `#btn-reset`, `#btn-theme`, `.anneau`, `.selectionne`, `.refus`.
+- Les tailles des anneaux ne sont jamais codées en dur dans le HTML.
+- Le thème passe par des variables CSS.
+- La console du navigateur doit rester vide, sans erreur ni avertissement.
+- Respecter `prefers-reduced-motion` (animations désactivées si demandé).
+
+- **L'état du jeu est une structure JavaScript** : un tableau de trois tableaux de tailles d'anneaux (le bas de la pile est à l'indice 0), plus quelques variables (sélection, nombre de coups, partie en cours). **Le DOM n'est jamais la source de vérité.**
+- Une fonction `rendre()` reconstruit tout l'affichage à partir de cet état. Rien n'est lu dans le DOM pour décider d'un coup.
+- La règle est isolée dans `deplacementValide(de, vers)`, qui ne touche pas au DOM.
+- Le calcul de la solution est séparé de son exécution :
+  - `resoudre(n, de, vers, via)` est récursive, renvoie la liste des coups sous forme de couples `[de, vers]`, et n'affiche rien, ne lit ni ne modifie l'état ;
+  - une fonction distincte rejoue cette liste coup par coup avec un délai (`async/await` avec une fonction d'attente, ou `setTimeout`).
+- `resoudre(3, 0, 2, 1).length` doit valoir 7 et `resoudre(5, 0, 2, 1).length` doit valoir 31.
+- Les coups de la démo passent par la même logique que ceux du joueur (état, compteur, `rendre()`).
+- Les animations sont purement visuelles : l'état est mis à jour avant, et les clics sont ignorés pendant leur déroulement.
+- Chaque nouvelle partie ou démo annule proprement la précédente (par exemple avec un compteur d'identifiant de démo), pour qu'aucune animation en retard ne modifie la partie suivante.
+
+- Donne le contenu **complet** des trois fichiers `index.html`, `style.css` et `script.js`, chacun dans son propre bloc de code, précédé de son nom en gras.
+- Pas d'explication avant les fichiers.
+- Après les fichiers, ajoute au maximum 10 lignes : les choix techniques importants (en particulier la technique d'animation retenue et pourquoi) et les limites éventuelles.
+- Si une exigence te paraît ambiguë ou impossible à respecter avec ces contraintes, dis-le après les fichiers plutôt que de la contourner en silence.
+

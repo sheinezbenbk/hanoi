@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Jeu des Tours de Hanoï : déplacez les anneaux et résolvez le casse-tête.">
+    <title>Les Tours de Hanoï</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <main class="conteneur">
+        <header class="entete">
+            <div>
+                <h1>Les Tours de Hanoï</h1>
+                <p class="sous-titre">Un défi de logique et de patience</p>
+            </div>
+            <button id="btn-theme" type="button" aria-label="Activer le thème sombre">
+                🌙 Mode sombre
+            </button>
+        </header>
+
+        <section class="panneau-commandes" aria-label="Commandes du jeu">
+            <div class="parametre">
+                <label for="nb-anneaux">Nombre d'anneaux :</label>
+                <input
+                    type="number"
+                    id="nb-anneaux"
+                    min="1"
+                    max="8"
+                    step="1"
+                    value="3"
+                >
+            </div>
+
+            <div class="boutons">
+                <button id="btn-demarrer" type="button">Démarrer</button>
+                <button id="btn-demo" type="button">Démo automatique</button>
+                <button id="btn-reset" type="button">Reset</button>
+            </div>
+        </section>
+
+        <section class="statistiques" aria-label="Statistiques de la partie">
+            <div class="statistique">
+                <span class="statistique-label">Coups joués</span>
+                <strong id="compteur">0</strong>
+            </div>
+            <div class="statistique">
+                <span class="statistique-label">Minimum théorique</span>
+                <strong id="minimum">0</strong>
+            </div>
+            <div class="statistique">
+                <span class="statistique-label">Score</span>
+                <strong id="score">—</strong>
+            </div>
+        </section>
+
+        <p id="message" class="message" role="status" aria-live="polite">
+            Choisissez le nombre d'anneaux puis cliquez sur Démarrer.
+        </p>
+
+        <section id="plateau" aria-label="Plateau des Tours de Hanoï">
+            <div class="tour" data-tour="0" aria-label="Première tour"></div>
+            <div class="tour" data-tour="1" aria-label="Deuxième tour"></div>
+            <div class="tour" data-tour="2" aria-label="Troisième tour"></div>
+        </section>
+
+        <p class="instruction">
+            Cliquez sur un anneau pour le sélectionner, puis sur une autre tour
+            pour le déplacer. Un grand anneau ne peut jamais être posé sur un
+            plus petit.
+        </p>
+
+        <footer>
+            <p>Les Tours de Hanoï · Jeu de réflexion</p>
+        </footer>
+    </main>
+</body>
+</html>

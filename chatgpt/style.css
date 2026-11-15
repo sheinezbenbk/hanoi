@@ -1,0 +1,440 @@
+
+/* =========================================
+   VARIABLES ET THÈMES
+========================================= */
+
+:root {
+    color-scheme: light;
+
+    --fond: #f3f5fa;
+    --surface: #ffffff;
+    --texte: #20283a;
+    --texte-secondaire: #667085;
+    --primaire: #5267d8;
+    --primaire-survol: #3e50bb;
+    --tour: #8b96aa;
+    --socle: #65718a;
+    --bordure: #e1e5ed;
+    --selection: #ffd166;
+    --erreur: #e5484d;
+    --ombre: 0 8px 28px rgba(25, 35, 60, 0.08);
+}
+
+body.theme-sombre {
+    color-scheme: dark;
+
+    --fond: #151925;
+    --surface: #222a3b;
+    --texte: #f0f2f8;
+    --texte-secondaire: #aab3c5;
+    --primaire: #8293ff;
+    --primaire-survol: #9eabff;
+    --tour: #9aa6bd;
+    --socle: #a0abc1;
+    --bordure: #394257;
+    --selection: #ffd166;
+    --erreur: #ff666b;
+    --ombre: 0 8px 28px rgba(0, 0, 0, 0.25);
+}
+
+/* =========================================
+   BASE
+========================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 30px 16px;
+    background: var(--fond);
+    color: var(--texte);
+    font-family: Arial, Helvetica, sans-serif;
+    transition: background-color 0.25s, color 0.25s;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+.conteneur {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* =========================================
+   EN-TÊTE
+========================================= */
+
+.entete {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+h1 {
+    margin: 0;
+    font-size: clamp(1.6rem, 5vw, 2.3rem);
+}
+
+.sous-titre {
+    margin: 8px 0 0;
+    color: var(--texte-secondaire);
+}
+
+#btn-theme {
+    background: var(--surface);
+    color: var(--texte);
+    border: 1px solid var(--bordure);
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* =========================================
+   COMMANDES
+========================================= */
+
+.panneau-commandes {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--bordure);
+    border-radius: 14px;
+    box-shadow: var(--ombre);
+}
+
+.parametre {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.parametre label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+#nb-anneaux {
+    width: 100px;
+    padding: 10px;
+    color: var(--texte);
+    background: var(--fond);
+    border: 1px solid var(--bordure);
+    border-radius: 8px;
+}
+
+.boutons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.boutons button {
+    padding: 11px 16px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--primaire);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.boutons button:hover {
+    background: var(--primaire-survol);
+    transform: translateY(-2px);
+}
+
+.boutons button:active {
+    transform: translateY(0);
+}
+
+#btn-reset {
+    background: #687386;
+}
+
+#btn-reset:hover {
+    background: #505d73;
+}
+
+/* =========================================
+   STATISTIQUES
+========================================= */
+
+.statistiques {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 22px 0;
+}
+
+.statistique {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    padding: 16px 8px;
+    background: var(--surface);
+    border: 1px solid var(--bordure);
+    border-radius: 12px;
+}
+
+.statistique-label {
+    font-size: 0.82rem;
+    color: var(--texte-secondaire);
+}
+
+.statistique strong {
+    font-size: 1.4rem;
+}
+
+/* =========================================
+   MESSAGES
+========================================= */
+
+.message {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    padding: 12px;
+    text-align: center;
+    color: var(--primaire);
+    font-weight: 600;
+    background: var(--surface);
+    border: 1px solid var(--bordure);
+    border-radius: 10px;
+}
+
+/* =========================================
+   PLATEAU
+========================================= */
+
+#plateau {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    min-height: 340px;
+    padding: 25px 12px 0;
+    background: var(--surface);
+    border: 1px solid var(--bordure);
+    border-radius: 16px;
+    box-shadow: var(--ombre);
+}
+
+.tour {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    min-width: 0;
+    height: 300px;
+    padding-bottom: 12px;
+    border-bottom: 10px solid var(--socle);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Barre verticale de chaque tour */
+
+.tour::before {
+    content: "";
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    width: 9px;
+    height: 230px;
+    border-radius: 6px 6px 0 0;
+    background: var(--tour);
+    transform: translateX(-50%);
+    z-index: 0;
+}
+
+/* =========================================
+   ANNEAUX
+========================================= */
+
+.anneau {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    height: 25px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: filter 0.2s, box-shadow 0.2s;
+}
+
+.anneau.selectionne {
+    outline: 4px solid var(--selection);
+    outline-offset: 2px;
+    filter: brightness(1.12);
+    z-index: 3;
+}
+
+.anneau.selectionne::after {
+    content: "▲";
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--selection);
+    font-size: 13px;
+}
+
+.anneau:not(.selectionne) {
+    cursor: default;
+}
+
+/* =========================================
+   ANIMATION DES ANNEAUX
+========================================= */
+
+.anneau-animation {
+    position: fixed;
+    z-index: 1000;
+    margin: 0;
+    pointer-events: none;
+    border-radius: 7px;
+    will-change: transform;
+}
+
+@keyframes soulever {
+    from {
+        transform: translate(0, 0);
+    }
+    to {
+        transform: translate(0, -80px);
+    }
+}
+
+/* =========================================
+   REFUS DE DÉPLACEMENT
+========================================= */
+
+.tour.refus {
+    animation: tremblement 0.35s ease-in-out;
+}
+
+@keyframes tremblement {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    20% {
+        transform: translateX(-8px);
+    }
+    40% {
+        transform: translateX(8px);
+    }
+    60% {
+        transform: translateX(-5px);
+    }
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+.instruction {
+    margin: 24px 0;
+    color: var(--texte-secondaire);
+    line-height: 1.6;
+    text-align: center;
+}
+
+footer {
+    margin-top: 35px;
+    color: var(--texte-secondaire);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* =========================================
+   ACCESSIBILITÉ : MOUVEMENT RÉDUIT
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* =========================================
+   ÉCRANS ÉTROITS
+========================================= */
+
+@media (max-width: 520px) {
+    body {
+        padding: 18px 10px;
+    }
+
+    .entete {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .panneau-commandes {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .boutons button {
+        flex: 1 1 auto;
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+
+    #plateau {
+        gap: 5px;
+        min-height: 290px;
+        padding: 15px 5px 0;
+    }
+
+    .tour {
+        height: 260px;
+    }
+
+    .tour::before {
+        height: 205px;
+        width: 7px;
+    }
+
+    .anneau {
+        height: 22px;
+    }
+
+    .statistiques {
+        gap: 6px;
+    }
+
+    .statistique {
+        padding: 12px 4px;
+    }
+
+    .statistique-label {
+        font-size: 0.68rem;
+        text-align: center;
+    }
+
+    .statistique strong {
+        font-size: 1.15rem;
+    }
+}
